@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QR kod yaratuvchi</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1020;--panel:#121a30;--panel2:#0d1426;--ink:#eaf0ff;--mute:#a3b3d6;--line:#2a3860;--r:#ff5468;--g:#34e08a;--b:#5b97ff;--a:var(--b);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(800px 420px at 0 0,#ff546826,transparent 62%),radial-gradient(800px 480px at 100% 0,#5b97ff26,transparent 62%),radial-gradient(900px 520px at 50% 100%,#34e08a1c,transparent 62%),var(--bg);background-attachment:fixed;min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--panel);z-index:30}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 56px}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0 0 6px;font-weight:600;letter-spacing:-.01em}
+h1::after{content:"";display:block;width:120px;height:4px;margin-top:10px;border-radius:2px;background:linear-gradient(90deg,var(--r),var(--g),var(--b))}
+.lead{color:var(--mute);margin:12px 0 22px;max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:15px}
+.tab[aria-selected=true]{background:var(--a);border-color:var(--a);color:#07101f;font-weight:600}
+label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+input[type=text],input[type=password],select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
+textarea{min-height:96px;resize:vertical}
+h2{font-size:17px;margin:22px 0 4px;font-weight:600;border-left:4px solid var(--g);padding-left:10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input[type=color]{width:100%;height:40px;padding:2px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--b)}
+.sw{display:flex;gap:8px;margin-top:8px}
+.sw button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.sw button:hover{border-color:var(--ink)}
+.prev{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);text-align:center;border-top:3px solid var(--a)}
+.box{background:#fff;border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:center;min-height:200px}
+canvas{display:block;width:100%;max-width:340px;height:auto;image-rendering:pixelated}
+.empty{color:#555;padding:20px;font-size:15px}
+.meta{font:500 13px "IBM Plex Mono",monospace;color:var(--mute);margin:10px 0 0}
+.btns{display:flex;gap:8px;margin-top:14px}
+.btn{flex:1;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:9px 10px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--a)}
+.btn.pri{background:var(--a);border-color:var(--a);color:#07101f;font-weight:600}
+.note{border-left:4px solid #ffd166;background:#2d2a14;color:#ffe08a;border-radius:8px;padding:8px 12px;margin-top:12px;font-size:14px;text-align:left}
+.note[hidden],.btns[hidden]{display:none}
+.pickbtn{display:block;margin:8px 0 0;text-align:center;color:var(--ink);font-size:15px;padding:10px;background:var(--a);border-color:var(--a);color:#07101f;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:8px;font-size:14px;z-index:40}
+.toast:empty{display:none}
+@media (max-width:820px){.grid{grid-template-columns:1fr}.prev{position:static;order:-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>QR kod yaratuvchi</h1>
+<p class="lead">Matn, havola, Wi-Fi, telefon yoki email uchun QR kod yarating. Rangini tanlang va PNG yoki SVG qilib saqlang.</p>
+<div class="grid">
+<div class="card">
+<div class="tabs" role="tablist" id="tabs"></div>
+<div id="fields"></div>
+<h2>Ko'rinishi</h2>
+<div class="row">
+<div><label for="fg">Nuqta rangi</label><input type="color" id="fg" value="#111111"></div>
+<div><label for="bg">Fon rangi</label><input type="color" id="bg" value="#ffffff"></div>
+</div>
+<div class="sw" id="sw" aria-label="Tayyor ranglar"></div>
+<h2>Fon rasmi (ixtiyoriy)</h2>
+<label class="btn pickbtn" for="bgimg" tabindex="0">Rasm tanlash</label>
+<input type="file" id="bgimg" accept="image/*" hidden>
+<div id="imgopt" hidden><label for="veil">Rasm ustidagi qatlam: <span id="veilv">70</span>%</label><input type="range" id="veil" min="0" max="100" value="70"><button class="btn" id="rmimg" type="button" style="margin-top:8px;width:100%">Rasmni olib tashlash</button></div>
+<div class="row">
+<div><label for="shape">Nuqta shakli</label><select id="shape"><option value="sq">Kvadrat</option><option value="rd">Yumaloq</option></select></div>
+<div><label for="ecc">Xato tuzatish</label><select id="ecc"><option value="L">L (past)</option><option value="M" selected>M (o'rta)</option><option value="Q">Q (yuqori)</option><option value="H">H (eng yuqori)</option></select></div>
+</div>
+<div class="row">
+<div><label for="size">Rasm o'lchami</label><select id="size"><option value="256">256 px</option><option value="512" selected>512 px</option><option value="1024">1024 px</option><option value="2048">2048 px</option></select></div>
+<div><label for="mg">Chekka bo'sh joy: <span id="mgv">4</span></label><input type="range" id="mg" min="1" max="8" value="4"></div>
+</div>
+</div>
+<div class="card prev">
+<div class="box"><canvas id="cv" width="10" height="10" aria-label="QR kod"></canvas><div class="empty" id="empty" hidden></div></div>
+<p class="meta" id="meta"></p>
+<div class="note" id="warn" hidden></div>
+<div class="btns" id="btns" hidden><button class="btn pri" id="png">PNG yuklash</button><button class="btn" id="svg">SVG yuklash</button></div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = v => (v || '').replace(/([\\;,:"])/g, '\\$1');
+const TABS = {
+  text:  {label: 'Matn / havola', fields: [{id: 't', label: 'Matn yoki havola', type: 'textarea', ph: 'https://...'}], build: v => { const t = (v.t || '').trim(); return (/^[a-z][a-z0-9+.-]*:/i.test(t) || /\s/.test(t) || !/^[\w-]+(\.[\w-]+)+(:\d+)?([\/?#]\S*)?$/.test(t)) ? t : 'https://' + t; }},
+  wifi:  {label: 'Wi-Fi', fields: [{id: 'ssid', label: 'Tarmoq nomi'}, {id: 'pw', label: 'Parol', type: 'password'}, {id: 'enc', label: 'Himoya turi', type: 'select', opts: [['WPA', 'WPA / WPA2 / WPA3'], ['WEP', 'WEP'], ['nopass', 'Parolsiz']]}],
+           build: v => v.ssid ? 'WIFI:T:' + (v.enc || 'WPA') + ';S:' + esc(v.ssid) + ';' + (v.enc === 'nopass' ? '' : 'P:' + esc(v.pw) + ';') + ';' : ''},
+  phone: {label: 'Telefon', fields: [{id: 'tel', label: 'Telefon raqami', ph: '+998901234567'}], build: v => v.tel ? 'tel:' + v.tel.replace(/\s+/g, '') : ''},
+  email: {label: 'Email', fields: [{id: 'to', label: 'Kimga', ph: 'ism@pochta.uz'}, {id: 'sub', label: 'Mavzu'}, {id: 'body', label: 'Xat matni', type: 'textarea'}],
+          build: v => v.to ? 'mailto:' + v.to + ((v.sub || v.body) ? '?' + [v.sub && 'subject=' + encodeURIComponent(v.sub), v.body && 'body=' + encodeURIComponent(v.body)].filter(Boolean).join('&') : '') : ''}
+};
+const vals = {t: 'https://claude.ai', enc: 'WPA'};
+let cur = 'text', svgStr = '', dl = null;
+const ACC = {text: 'var(--b)', wifi: 'var(--g)', phone: 'var(--r)', email: 'var(--b)'};
+
+function renderTabs(){
+  $('#tabs').innerHTML = Object.keys(TABS).map(k => '<button class="tab" role="tab" data-k="' + k + '" aria-selected="' + (k === cur) + '">' + TABS[k].label + '</button>').join('');
+  $('#fields').innerHTML = TABS[cur].fields.map(f => {
+    const v = (vals[f.id] || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    if (f.type === 'textarea') return '<label for="f_' + f.id + '">' + f.label + '</label><textarea id="f_' + f.id + '" data-id="' + f.id + '" placeholder="' + (f.ph || '') + '">' + v + '</textarea>';
+    if (f.type === 'select') return '<label for="f_' + f.id + '">' + f.label + '</label><select id="f_' + f.id + '" data-id="' + f.id + '">' + f.opts.map(o => '<option value="' + o[0] + '"' + (vals[f.id] === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
+    return '<label for="f_' + f.id + '">' + f.label + '</label><input type="' + (f.type === 'password' ? 'password' : 'text') + '" id="f_' + f.id + '" data-id="' + f.id + '" value="' + v + '" placeholder="' + (f.ph || '') + '" autocomplete="off">';
+  }).join('');
+  document.documentElement.style.setProperty('--a', ACC[cur]);
+}
+const lum = h => { const c = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) / 255).map(x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+
+function generate(){
+  const text = TABS[cur].build(vals);
+  const show = (msg) => { $('#cv').hidden = true; $('#empty').hidden = false; $('#empty').textContent = msg; $('#btns').hidden = true; $('#meta').textContent = ''; $('#warn').hidden = true; svgStr = ''; };
+  if (!text) return show('QR kod shu yerda paydo bo\'ladi. Ma\'lumot kiriting.');
+  if (typeof qrcode === 'undefined') return show('QR kutubxonasi yuklanmadi. Internetni tekshirib, sahifani yangilang.');
+  let qr;
+  try {
+    if (qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs['UTF-8']) qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    qr = qrcode(0, $('#ecc').value);
+    qr.addData(text, 'Byte');
+    qr.make();
+  } catch (e) { return show('Ma\'lumot juda uzun. Uni qisqartiring yoki xato tuzatish darajasini pasaytiring.'); }
+
+  const n = qr.getModuleCount(), m = +$('#mg').value, tot = n + 2 * m, round = $('#shape').value === 'rd';
+  const fg = $('#fg').value, bg = $('#bg').value;
+  const cell = Math.max(2, Math.floor(+$('#size').value / tot)), px = cell * tot;
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  cv.width = cv.height = px;
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, px, px);
+  const veil = +$('#veil').value / 100;
+  if (bgImg) {
+    const s = Math.max(px / bgImg.width, px / bgImg.height), dw = bgImg.width * s, dh = bgImg.height * s;
+    ctx.drawImage(bgImg, (px - dw) / 2, (px - dh) / 2, dw, dh);
+    ctx.globalAlpha = veil; ctx.fillStyle = bg;
+    ctx.fillRect(m * cell, m * cell, n * cell, n * cell);
+    ctx.globalAlpha = 1;
+  }
+  const imgSvg = bgImg ? '<image href="' + bgData + '" width="' + tot + '" height="' + tot + '" preserveAspectRatio="xMidYMid slice"/><rect x="' + m + '" y="' + m + '" width="' + n + '" height="' + n + '" fill="' + bg + '" fill-opacity="' + veil + '"/>' : '';
+  ctx.fillStyle = fg;
+  let shapes = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (!qr.isDark(r, c)) continue;
+    const x = (c + m) * cell, y = (r + m) * cell;
+    if (round) { ctx.beginPath(); ctx.arc(x + cell / 2, y + cell / 2, cell * .47, 0, 6.2832); ctx.fill(); shapes += '<circle cx="' + (c + m + .5) + '" cy="' + (r + m + .5) + '" r=".47"/>'; }
+    else { ctx.fillRect(x, y, cell, cell); shapes += '<rect x="' + (c + m) + '" y="' + (r + m) + '" width="1" height="1"/>'; }
+  }
+  svgStr = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + tot + ' ' + tot + '" width="' + px + '" height="' + px + '"' + (round ? '' : ' shape-rendering="crispEdges"') + '><rect width="' + tot + '" height="' + tot + '" fill="' + bg + '"/>' + imgSvg + '<g fill="' + fg + '">' + shapes + '</g></svg>';
+  cv.hidden = false; $('#empty').hidden = true;
+  $('#meta').textContent = n + ' x ' + n + ' modul · ' + px + ' px · ' + text.length + ' belgi';
+  const w = $('#warn');
+  const lf = lum(fg), lb = lum(bg), ratio = (Math.max(lf, lb) + .05) / (Math.min(lf, lb) + .05);
+  if (bgImg) { w.hidden = false; w.textContent = "Rasm ustida QR yomon o'qilishi mumkin. Qatlamni oshiring va telefonda tekshirib ko'ring."; }
+  else if (lf > lb) { w.hidden = false; w.textContent = 'Nuqtalar fondan ochiqroq. Ko\'p skanerlar bunday QR kodni o\'qiy olmaydi.'; }
+  else if (ratio < 4) { w.hidden = false; w.textContent = 'Nuqta va fon ranglari bir-biriga yaqin. QR kod yomon o\'qilishi mumkin.'; }
+  else if (round) { w.hidden = false; w.textContent = 'Yumaloq nuqtalar chiroyli, lekin kvadrat shakl ishonchliroq skanerlanadi. Chop etishdan oldin telefonda tekshiring.'; }
+  else w.hidden = true;
+  $('#btns').hidden = !dl;
+}
+function toast(t){ const el = $('#toast'); el.textContent = t; clearTimeout(toast.id); toast.id = setTimeout(() => el.textContent = '', 3000); }
+async function save(name, data){
+  if (!dl) return;
+  try { await dl.save({filename: name, data}); }
+  catch (e) { if (e && e.code === 'declined') return; toast('Saqlab bo\'lmadi' + (e && e.code ? ' (' + e.code + ')' : '')); }
+}
+
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; cur = b.dataset.k; renderTabs(); generate(); });
+$('#fields').addEventListener('input', e => { const id = e.target.dataset.id; if (!id) return; vals[id] = e.target.value; generate(); });
+['fg', 'bg', 'shape', 'ecc', 'size'].forEach(id => $('#' + id).addEventListener('input', generate));
+$('#mg').addEventListener('input', e => { $('#mgv').textContent = e.target.value; generate(); });
+[['#111111', 'Qora'], ['#d6203a', 'Qizil'], ['#11985a', 'Yashil'], ['#2457d6', 'Ko\'k']].forEach(([c, n]) => {
+  const b = document.createElement('button'); b.style.background = c; b.title = n; b.setAttribute('aria-label', n + ' rang');
+  b.addEventListener('click', () => { $('#fg').value = c; generate(); });
+  $('#sw').appendChild(b);
+});
+$('#png').addEventListener('click', () => $('#cv').toBlob(b => b && save('qr-kod.png', b), 'image/png'));
+$('#svg').addEventListener('click', () => svgStr && save('qr-kod.svg', svgStr));
+
+let bgImg = null, bgData = '';
+$('#bgimg').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1024 / Math.max(im.width, im.height));
+      const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      bgData = c.toDataURL('image/jpeg', 0.85);
+      const im2 = new Image();
+      im2.onload = () => { bgImg = im2; $('#imgopt').hidden = false; generate(); };
+      im2.src = bgData;
+    };
+    im.onerror = () => toast("Rasmni o'qib bo'lmadi");
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+});
+$('#veil').addEventListener('input', e => { $('#veilv').textContent = e.target.value; generate(); });
+$('#rmimg').addEventListener('click', () => { bgImg = null; bgData = ''; $('#bgimg').value = ''; $('#imgopt').hidden = true; generate(); });
+
+renderTabs(); generate();
+try {
+  if (window.claude && window.claude.use) window.claude.use('downloads').then(d => { dl = d; generate(); }).catch(() => {});
+} catch (e) {}
+</script>
+</body>
+</html>
